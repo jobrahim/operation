@@ -1,10 +1,16 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { EntityManager } from 'typeorm/entity-manager/EntityManager';
 import {
   IndexOperationDataResponseDto,
   IndexOperationResponseDto,
 } from './dto/index-operation-response.dto';
+import { Status } from './dto/index-operations-params.dto';
 
 @Injectable()
 export class OperationIndexService {
@@ -19,8 +25,15 @@ export class OperationIndexService {
     type: string,
     page: number,
     publico: boolean,
+    status: Status,
+    client_cuit: string,
+    booking_id: string,
+    vesselVissit: string,
+    unitId: string,
     limit = 5,
   ) {
+    console.log('publico typeof:', typeof publico);
+
     if (page <= 0) {
       throw new NotFoundException('page not found');
     }
@@ -30,7 +43,7 @@ export class OperationIndexService {
       page +
       ' DECLARE @reg_x_pagina INT = ' +
       limit +
-      ' SELECT op.id, op.created, op.client_id, op.client_cuit, op.[type], op.user_creator, os.[status], op.vesselVissit, op.booking_id, os.shifts_operation_id FROM order_service_entity as os' +
+      ' SELECT op.id, op.created, op.client_id, op.client_cuit, op.[type], op.user_creator, os.[status], op.vesselVissit, op.booking_id, os.shifts_operation_id, os.unitId FROM order_service_entity as os' +
       ' inner join operation_order_entity op on op.id = os.operation_id' +
       ' inner join subscriber_entity sub on sub.operation_order_id = op.id';
 
@@ -64,11 +77,44 @@ export class OperationIndexService {
         "select id from order_service_type where name = '" + type + "'";
       const typeResult = await this.repository.query(typeId);
       const queryWithType = ' AND os.type = ' + typeResult[0].id;
-      pagination = pagination + queryWithType + orderByQuery;
+      pagination = pagination + queryWithType;
       lastPage = lastPage + queryWithType;
-    } else {
-      pagination = pagination + orderByQuery;
     }
+
+    if (status) {
+      const queryWithStatus = ' AND os.[status] = ' + "'" + status + "'";
+      pagination = pagination + queryWithStatus;
+      lastPage = lastPage + queryWithStatus;
+    }
+
+    if (client_cuit) {
+      const queryWithClientCuit =
+        ' AND op.client_cuit = ' + "'" + client_cuit + "'";
+      pagination = pagination + queryWithClientCuit;
+      lastPage = lastPage + queryWithClientCuit;
+    }
+
+    if (booking_id) {
+      const queryWithBookingId =
+        ' AND op.booking_id = ' + "'" + booking_id + "'";
+      pagination = pagination + queryWithBookingId;
+      lastPage = lastPage + queryWithBookingId;
+    }
+
+    if (vesselVissit) {
+      const queryWithVesselVissit =
+        ' AND op.vesselVissit = ' + "'" + vesselVissit + "'";
+      pagination = pagination + queryWithVesselVissit;
+      lastPage = lastPage + queryWithVesselVissit;
+    }
+
+    if (unitId) {
+      const queryWithUnitId = ' AND os.unitId = ' + "'" + unitId + "'";
+      pagination = pagination + queryWithUnitId;
+      lastPage = lastPage + queryWithUnitId;
+    }
+
+    pagination = pagination + orderByQuery;
 
     console.log('pagination :', pagination);
     console.log('**********************************************************');

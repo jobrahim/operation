@@ -16,7 +16,28 @@ export class IndexOperationsParamsDto {
   @IsNumberString()
   page: number;
   @ApiProperty()
-  @IsBoolean()
   @IsOptional()
   publico: boolean;
+  @ApiProperty()
+  @IsOptional()
+  status: Status;
+  @ApiProperty()
+  @IsOptional()
+  client_cuit: string;
+  @ApiProperty()
+  @IsOptional()
+  booking_id: string;
+  @ApiProperty()
+  @IsOptional()
+  vesselVissit: string;
+  @ApiProperty()
+  @IsOptional()
+  unitId: string;
+}
+
+export enum Status {
+  NEW = 'NEW',
+  PROCESSING = 'PROCESSING',
+  ERROR = 'ERROR',
+  FINALIZED = 'FINALIZED',
 }

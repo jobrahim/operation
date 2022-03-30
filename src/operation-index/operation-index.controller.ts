@@ -7,6 +7,7 @@ import {
   HttpStatus,
   NotFoundException,
   UseGuards,
+  Body,
 } from '@nestjs/common';
 import { OperationIndexService } from './operation-index.service';
 import { IndexOperationsParamsDto } from './dto/index-operations-params.dto';
@@ -21,11 +22,23 @@ export class OperationIndexController {
   async indexOperations(
     @Req() req,
     @Res() res,
-    @Query() { type, page, publico }: IndexOperationsParamsDto,
+    @Query()
+    {
+      type,
+      page,
+      publico,
+      status,
+      client_cuit,
+      booking_id,
+      vesselVissit,
+      unitId,
+    }: IndexOperationsParamsDto,
   ) {
+    console.log('publico typeof:', publico);
     try {
       const userId = req.user ? req.user.userId : null;
-      const p = publico ? publico : false;
+      const p = publico ? true : false;
+
       if (userId === null) {
         throw new NotFoundException('userId not found');
       }
@@ -36,6 +49,11 @@ export class OperationIndexController {
         type,
         page,
         p,
+        status,
+        client_cuit,
+        booking_id,
+        vesselVissit,
+        unitId,
       );
 
       return res.status(HttpStatus.OK).json(indexOperations);
