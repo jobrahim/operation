@@ -14,63 +14,64 @@ export class OperationIndexService {
     private readonly profileService: ClientProxy,
   ) {}
 
-  async indexOperations(userId: string, type: string, page: number, limit = 5) {
+  async indexOperations(
+    userId: string,
+    type: string,
+    page: number,
+    publico: boolean,
+    limit = 5,
+  ) {
     if (page <= 0) {
       throw new NotFoundException('page not found');
     }
 
-    const profile = await this.profileService
-      .send<any>({ cmd: 'get-profile' }, userId)
-      .toPromise();
-    console.log(profile);
-
-    const typeId =
-      "select id from order_service_type where name = '" + type + "'";
-
-    console.log('typeId:', typeId);
-    const typeIdResult = await this.repository.query(typeId);
-
-    console.log('query typeId:', typeIdResult[0].id);
-
-    const pagination =
+    let pagination =
       'DECLARE @num_pagina INT = ' +
       page +
       ' DECLARE @reg_x_pagina INT = ' +
       limit +
       ' SELECT op.id, op.created, op.client_id, op.client_cuit, op.[type], op.user_creator, os.[status], op.vesselVissit, op.booking_id, os.shifts_operation_id FROM order_service_entity as os' +
       ' inner join operation_order_entity op on op.id = os.operation_id' +
-      ' inner join subscriber_entity sub on sub.operation_order_id = op.id' +
-      ' WHERE sub.organization_id = ' +
-      "'" +
-      profile.organizations.id +
-      "'" +
-      ' AND os.[type] = ' +
-      "'" +
-      parseInt(typeIdResult[0].id) +
-      "'" +
-      ' ' +
-      ' ORDER BY op.created DESC' +
-      ' OFFSET (@num_pagina - 1) * @reg_x_pagina ROWS ' +
-      'FETCH NEXT @reg_x_pagina ROWS ONLY';
+      ' inner join subscriber_entity sub on sub.operation_order_id = op.id';
 
-    console.log('query pagination:', pagination);
-
-    const lastPage =
+    let lastPage =
       ' SELECT CEILING( COUNT (*)/' +
       limit +
       '.0' +
       ') as val FROM order_service_entity as os' +
       ' inner join operation_order_entity op on op.id = os.operation_id' +
-      ' inner join subscriber_entity sub on sub.operation_order_id = op.id' +
-      ' WHERE sub.organization_id = ' +
-      "'" +
-      profile.organizations.id +
-      "'" +
-      ' AND os.type = ' +
-      "'" +
-      parseInt(typeIdResult[0].id) +
-      "'";
+      ' inner join subscriber_entity sub on sub.operation_order_id = op.id';
 
+    const orderByQuery =
+      ' ORDER BY op.created DESC' +
+      ' OFFSET (@num_pagina - 1) * @reg_x_pagina ROWS ' +
+      'FETCH NEXT @reg_x_pagina ROWS ONLY';
+
+    if (publico === false) {
+      const profile = await this.profileService
+        .send<any>({ cmd: 'get-profile' }, userId)
+        .toPromise();
+      console.log(profile);
+      const queryPrivate =
+        ' WHERE sub.organization_id = ' + "'" + profile.organizations.id + "'";
+
+      pagination = pagination + queryPrivate;
+      lastPage = lastPage + queryPrivate;
+    }
+
+    if (type) {
+      const typeId =
+        "select id from order_service_type where name = '" + type + "'";
+      const typeResult = await this.repository.query(typeId);
+      const queryWithType = ' AND os.type = ' + typeResult[0].id;
+      pagination = pagination + queryWithType + orderByQuery;
+      lastPage = lastPage + queryWithType;
+    } else {
+      pagination = pagination + orderByQuery;
+    }
+
+    console.log('pagination :', pagination);
+    console.log('**********************************************************');
     console.log('query lastPage:', lastPage);
     const operations = await this.repository.query(pagination);
 

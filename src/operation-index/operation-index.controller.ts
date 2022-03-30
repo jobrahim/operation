@@ -21,13 +21,12 @@ export class OperationIndexController {
   async indexOperations(
     @Req() req,
     @Res() res,
-    @Query() { type, page }: IndexOperationsParamsDto,
+    @Query() { type, page, publico }: IndexOperationsParamsDto,
   ) {
     try {
-      const userId = req.user
-        ? req.user.userId
-        : '81abaaa9-7842-4737-be4f-555dca7a873a';
-      if (userId === undefined) {
+      const userId = req.user ? req.user.userId : null;
+      const p = publico ? publico : false;
+      if (userId === null) {
         throw new NotFoundException('userId not found');
       }
 
@@ -36,6 +35,7 @@ export class OperationIndexController {
         userId,
         type,
         page,
+        p,
       );
 
       return res.status(HttpStatus.OK).json(indexOperations);

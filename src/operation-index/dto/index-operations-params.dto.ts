@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsNumber,
   IsNumberString,
   IsOptional,
@@ -14,4 +15,8 @@ export class IndexOperationsParamsDto {
   @ApiProperty()
   @IsNumberString()
   page: number;
+  @ApiProperty()
+  @IsBoolean()
+  @IsOptional()
+  publico: boolean;
 }
