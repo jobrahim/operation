@@ -34,7 +34,6 @@ export class OperationIndexController {
       unitId,
     }: IndexOperationsParamsDto,
   ) {
-    console.log('publico typeof:', publico);
     try {
       const userId = req.user ? req.user.userId : null;
       const p = publico ? true : false;

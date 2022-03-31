@@ -32,8 +32,6 @@ export class OperationIndexService {
     unitId: string,
     limit = 5,
   ) {
-    console.log('publico typeof:', typeof publico);
-
     if (page <= 0) {
       throw new NotFoundException('page not found');
     }
