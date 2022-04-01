@@ -68,6 +68,16 @@ export class OperationIndexService {
 
       pagination = pagination + queryPrivate;
       lastPage = lastPage + queryPrivate;
+    } else {
+      const profile = await this.profileService
+        .send<any>({ cmd: 'get-profile' }, userId)
+        .toPromise();
+      console.log(profile);
+      const queryPrivate =
+        ' WHERE sub.organization_id <> ' + "'" + profile.organizations.id + "'";
+
+      pagination = pagination + queryPrivate;
+      lastPage = lastPage + queryPrivate;
     }
 
     if (type) {
@@ -141,7 +151,6 @@ export class OperationIndexService {
     }
     response.last_page = lastPageResult[0].val;
 
-    response.total = operations.total;
     response.data = [];
 
     for (const operation of operations) {
