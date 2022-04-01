@@ -74,7 +74,7 @@ export class OperationIndexService {
         .toPromise();
       console.log(profile);
       const queryPrivate =
-        ' WHERE sub.organization_id <> ' + "'" + profile.organizations.id + "'";
+        ' WHERE sub.organization_id <> ' + parseInt(profile.organizations.id);
 
       pagination = pagination + queryPrivate;
       lastPage = lastPage + queryPrivate;
@@ -128,6 +128,7 @@ export class OperationIndexService {
     console.log('**********************************************************');
     console.log('query lastPage:', lastPage);
     const operations = await this.repository.query(pagination);
+    console.log('operation.lenght:', operations.length);
 
     const lastPageResult = await this.repository.query(lastPage);
 
