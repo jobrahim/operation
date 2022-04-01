@@ -53,6 +53,13 @@ export class OperationIndexService {
       ' inner join operation_order_entity op on op.id = os.operation_id' +
       ' inner join subscriber_entity sub on sub.operation_order_id = op.id';
 
+    let total =
+      ' SELECT COUNT (*) as val FROM order_service_entity as os' +
+      ' inner join operation_order_entity op on op.id = os.operation_id' +
+      ' inner join subscriber_entity sub on sub.operation_order_id = op.id';
+
+    console.log('total:', total);
+
     const orderByQuery =
       ' ORDER BY op.created DESC' +
       ' OFFSET (@num_pagina - 1) * @reg_x_pagina ROWS ' +
@@ -68,6 +75,7 @@ export class OperationIndexService {
 
       pagination = pagination + queryPrivate;
       lastPage = lastPage + queryPrivate;
+      total = total + queryPrivate;
     } else {
       const profile = await this.profileService
         .send<any>({ cmd: 'get-profile' }, userId)
@@ -78,6 +86,7 @@ export class OperationIndexService {
 
       pagination = pagination + queryPrivate;
       lastPage = lastPage + queryPrivate;
+      total = total + queryPrivate;
     }
 
     if (type) {
@@ -87,12 +96,14 @@ export class OperationIndexService {
       const queryWithType = ' AND os.type = ' + typeResult[0].id;
       pagination = pagination + queryWithType;
       lastPage = lastPage + queryWithType;
+      total = total + queryWithType;
     }
 
     if (status) {
       const queryWithStatus = ' AND os.[status] = ' + "'" + status + "'";
       pagination = pagination + queryWithStatus;
       lastPage = lastPage + queryWithStatus;
+      total = total + queryWithStatus;
     }
 
     if (client_cuit) {
@@ -100,6 +111,7 @@ export class OperationIndexService {
         ' AND op.client_cuit = ' + "'" + client_cuit + "'";
       pagination = pagination + queryWithClientCuit;
       lastPage = lastPage + queryWithClientCuit;
+      total = total + queryWithClientCuit;
     }
 
     if (booking_id) {
@@ -107,6 +119,7 @@ export class OperationIndexService {
         ' AND op.booking_id = ' + "'" + booking_id + "'";
       pagination = pagination + queryWithBookingId;
       lastPage = lastPage + queryWithBookingId;
+      total = total + queryWithBookingId;
     }
 
     if (vesselVissit) {
@@ -114,12 +127,14 @@ export class OperationIndexService {
         ' AND op.vesselVissit = ' + "'" + vesselVissit + "'";
       pagination = pagination + queryWithVesselVissit;
       lastPage = lastPage + queryWithVesselVissit;
+      total = total + queryWithVesselVissit;
     }
 
     if (unitId) {
       const queryWithUnitId = ' AND os.unitId = ' + "'" + unitId + "'";
       pagination = pagination + queryWithUnitId;
       lastPage = lastPage + queryWithUnitId;
+      total = total + queryWithUnitId;
     }
 
     pagination = pagination + orderByQuery;
@@ -131,8 +146,10 @@ export class OperationIndexService {
     console.log('operation.lenght:', operations.length);
 
     const lastPageResult = await this.repository.query(lastPage);
+    const resultTotal = await this.repository.query(total);
 
     const pag = lastPageResult[0].val;
+    console.log('pag:', pag);
 
     if (page > pag) {
       throw new NotFoundException('page not found');
@@ -151,6 +168,7 @@ export class OperationIndexService {
       response.per_page = limit;
     }
     response.last_page = lastPageResult[0].val;
+    response.total = resultTotal[0].val;
 
     response.data = [];
 
