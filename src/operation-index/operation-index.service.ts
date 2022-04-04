@@ -41,21 +41,21 @@ export class OperationIndexService {
       page +
       ' DECLARE @reg_x_pagina INT = ' +
       limit +
-      ' SELECT op.id, op.created, op.client_id, op.client_cuit, op.[type], op.user_creator, os.[status], op.vesselVissit, op.booking_id, os.shifts_operation_id, os.unitId FROM order_service_entity as os' +
-      ' inner join operation_order_entity op on op.id = os.operation_id' +
+      ' SELECT op.id, op.created, op.client_id, op.client_cuit, op.[type], op.user_creator, op.vesselVissit, op.booking_id FROM operation_order_entity as op' +
+      ' inner join order_service_entity os on op.id = os.operation_id' +
       ' inner join subscriber_entity sub on sub.operation_order_id = op.id';
 
     let lastPage =
       ' SELECT CEILING( COUNT (*)/' +
       limit +
       '.0' +
-      ') as val FROM order_service_entity as os' +
-      ' inner join operation_order_entity op on op.id = os.operation_id' +
+      ') as val FROM operation_order_entity as op' +
+      ' inner join order_service_entity os on op.id = os.operation_id' +
       ' inner join subscriber_entity sub on sub.operation_order_id = op.id';
 
     let total =
-      ' SELECT COUNT (*) as val FROM order_service_entity as os' +
-      ' inner join operation_order_entity op on op.id = os.operation_id' +
+      ' SELECT COUNT (*) as val FROM operation_order_entity as op' +
+      ' inner join order_service_entity os on op.id = os.operation_id' +
       ' inner join subscriber_entity sub on sub.operation_order_id = op.id';
 
     console.log('total:', total);
