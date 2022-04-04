@@ -143,7 +143,7 @@ export class OperationIndexService {
     console.log('**********************************************************');
     console.log('query lastPage:', lastPage);
     const operations = await this.repository.query(pagination);
-    console.log('operation.lenght:', operations.length);
+    console.log('operation:', operations);
 
     const lastPageResult = await this.repository.query(lastPage);
     const resultTotal = await this.repository.query(total);
@@ -173,7 +173,7 @@ export class OperationIndexService {
     response.data = [];
 
     for (const operation of operations) {
-      console.log('order', operation);
+      console.log('operation', operation);
       const item = new IndexOperationDataResponseDto();
       item.id = operation.id;
       item.client_id = operation.client_id;
