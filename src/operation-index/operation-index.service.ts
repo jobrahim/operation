@@ -37,56 +37,25 @@ export class OperationIndexService {
     }
 
     let pagination =
-      'DECLARE @num_pagina INT = ' +
-      page +
-      ' DECLARE @reg_x_pagina INT = ' +
-      limit +
-      ' SELECT op.id, op.created, op.client_id, op.client_cuit, op.[type], op.user_creator, op.vesselVissit, op.booking_id FROM operation_order_entity as op' +
+      ' SELECT op.id FROM operation_order_entity as op' +
       ' inner join order_service_entity os on op.id = os.operation_id' +
       ' inner join subscriber_entity sub on sub.operation_order_id = op.id';
 
-    let lastPage =
-      ' SELECT CEILING( COUNT (*)/' +
-      limit +
-      '.0' +
-      ') as val FROM operation_order_entity as op' +
-      ' inner join order_service_entity os on op.id = os.operation_id' +
-      ' inner join subscriber_entity sub on sub.operation_order_id = op.id';
-
-    let total =
-      ' SELECT COUNT (*) as val FROM operation_order_entity as op' +
-      ' inner join order_service_entity os on op.id = os.operation_id' +
-      ' inner join subscriber_entity sub on sub.operation_order_id = op.id';
-
-    console.log('total:', total);
-
-    const orderByQuery =
-      ' ORDER BY op.created DESC' +
-      ' OFFSET (@num_pagina - 1) * @reg_x_pagina ROWS ' +
-      'FETCH NEXT @reg_x_pagina ROWS ONLY';
+    const profile = await this.profileService
+      .send<any>({ cmd: 'get-profile' }, userId)
+      .toPromise();
+    console.log(profile);
 
     if (publico === false) {
-      const profile = await this.profileService
-        .send<any>({ cmd: 'get-profile' }, userId)
-        .toPromise();
-      console.log(profile);
       const queryPrivate =
         ' WHERE sub.organization_id = ' + "'" + profile.organizations.id + "'";
 
       pagination = pagination + queryPrivate;
-      lastPage = lastPage + queryPrivate;
-      total = total + queryPrivate;
     } else {
-      const profile = await this.profileService
-        .send<any>({ cmd: 'get-profile' }, userId)
-        .toPromise();
-      console.log(profile);
       const queryPrivate =
         ' WHERE sub.organization_id <> ' + parseInt(profile.organizations.id);
 
       pagination = pagination + queryPrivate;
-      lastPage = lastPage + queryPrivate;
-      total = total + queryPrivate;
     }
 
     if (type) {
@@ -95,60 +64,54 @@ export class OperationIndexService {
       const typeResult = await this.repository.query(typeId);
       const queryWithType = ' AND os.type = ' + typeResult[0].id;
       pagination = pagination + queryWithType;
-      lastPage = lastPage + queryWithType;
-      total = total + queryWithType;
     }
 
     if (status) {
       const queryWithStatus = ' AND os.[status] = ' + "'" + status + "'";
       pagination = pagination + queryWithStatus;
-      lastPage = lastPage + queryWithStatus;
-      total = total + queryWithStatus;
     }
 
     if (client_cuit) {
       const queryWithClientCuit =
         ' AND op.client_cuit = ' + "'" + client_cuit + "'";
       pagination = pagination + queryWithClientCuit;
-      lastPage = lastPage + queryWithClientCuit;
-      total = total + queryWithClientCuit;
     }
 
     if (booking_id) {
       const queryWithBookingId =
         ' AND op.booking_id = ' + "'" + booking_id + "'";
       pagination = pagination + queryWithBookingId;
-      lastPage = lastPage + queryWithBookingId;
-      total = total + queryWithBookingId;
     }
 
     if (vesselVissit) {
       const queryWithVesselVissit =
         ' AND op.vesselVissit = ' + "'" + vesselVissit + "'";
       pagination = pagination + queryWithVesselVissit;
-      lastPage = lastPage + queryWithVesselVissit;
-      total = total + queryWithVesselVissit;
     }
 
     if (unitId) {
       const queryWithUnitId = ' AND os.unitId = ' + "'" + unitId + "'";
       pagination = pagination + queryWithUnitId;
-      lastPage = lastPage + queryWithUnitId;
-      total = total + queryWithUnitId;
     }
 
-    pagination = pagination + orderByQuery;
+    const groupBy = ' GROUP BY op.id order by op.id desc';
+
+    pagination = pagination + groupBy;
 
     console.log('pagination :', pagination);
-    console.log('**********************************************************');
-    console.log('query lastPage:', lastPage);
+
     const operations = await this.repository.query(pagination);
     console.log('operation:', operations);
+    const listOfOperations = [];
+    for (const operation of operations) {
+      const op =
+        'select * from operation_order_entity where id = ' + operation.id;
+      const operationResult = await this.repository.query(op);
+      listOfOperations.push(operationResult[0]);
+    }
+    console.log('listOfOperations:', listOfOperations);
 
-    const lastPageResult = await this.repository.query(lastPage);
-    const resultTotal = await this.repository.query(total);
-
-    const pag = lastPageResult[0].val;
+    const pag = Math.ceil(listOfOperations.length / limit);
     console.log('pag:', pag);
 
     if (page > pag) {
@@ -158,32 +121,33 @@ export class OperationIndexService {
     const response = new IndexOperationResponseDto();
 
     response.current_page = page;
-    response.from = (page - 1) * limit;
+    if (page.toString() === '1') {
+      response.from = 1;
+    } else {
+      response.from = (page - 1) * limit;
+    }
     if (page.toString() === pag.toString()) {
-      const n = operations.length;
-      response.to = response.from + n;
-      response.per_page = n;
+      response.to = listOfOperations.length;
+      response.per_page = listOfOperations.length - (page - 1) * limit;
     } else {
       response.to = page * limit;
       response.per_page = limit;
     }
-    response.last_page = lastPageResult[0].val;
-    response.total = resultTotal[0].val;
+    response.last_page = Math.ceil(listOfOperations.length / limit);
+    response.total = listOfOperations.length;
 
     response.data = [];
-
-    for (const operation of operations) {
-      console.log('operation', operation);
+    const position = (page - 1) * limit;
+    for (let i = position; i < response.to; i++) {
       const item = new IndexOperationDataResponseDto();
-      item.id = operation.id;
-      item.client_id = operation.client_id;
-      item.client_cuit = operation.client_cuit;
-      item.type = operation.type;
-      item.user_creator = operation.user_creator;
-      item.status = operation.status;
-      item.vessel_vissit = operation.vesselVissit;
-      item.booking_id = operation.booking_id;
-      item.shifts_operation_id = operation.shifts_operation_id;
+      item.id = listOfOperations[i].id;
+      item.client_id = listOfOperations[i].client_id;
+      item.client_cuit = listOfOperations[i].client_cuit;
+      item.type = listOfOperations[i].type;
+      item.user_creator = listOfOperations[i].user_creator;
+      item.vessel_vissit = listOfOperations[i].vesselVissit;
+      item.booking_id = listOfOperations[i].booking_id;
+
       response.data.push(item);
     }
     return response;
