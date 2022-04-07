@@ -36,4 +36,8 @@ export class IndexOperationDataResponseDto {
   booking_id: string;
   @ApiProperty()
   shifts_operation_id: number; // id de la operacion de coordinacion (shifts asociada)
+  @ApiProperty()
+  vessel_id: string;
+  @ApiProperty()
+  vessel_voyage: string;
 }

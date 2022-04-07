@@ -148,6 +148,13 @@ export class OperationIndexService {
       item.vessel_vissit = listOfOperations[i].vesselVissit;
       item.booking_id = listOfOperations[i].booking_id;
 
+      const str = item.vessel_vissit;
+      const reg = /[a-z]+|[^a-z]+/gi;
+      const regexStr = str.match(reg);
+      console.log(regexStr);
+      item.vessel_id = regexStr[0];
+      item.vessel_voyage = regexStr[1];
+
       response.data.push(item);
     }
     return response;
